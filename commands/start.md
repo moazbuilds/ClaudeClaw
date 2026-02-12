@@ -49,4 +49,16 @@ Start the heartbeat daemon for this project. Follow these steps exactly:
    nohup bun run ${CLAUDE_PLUGIN_ROOT}/src/index.ts > .claude/heartbeat/logs/daemon.log 2>&1 &
    ```
 
-5. **Report**: Tell the user the daemon is running and show the PID. Mention they can use `/heartbeat:status` to check on it and `/heartbeat:stop` to stop it.
+5. **Report**: Print the ASCII art below then show the PID and status info.
+
+IMPORTANT: The 🦞 emoji takes 2 character widths in monospace. You MUST copy the exact spacing below character-for-character. Do NOT add or remove any spaces. Output it inside a markdown code block:
+
+```
+      🦞  ▐▛███▜▌  🦞
+         ▝▜█████▛▘
+           ▘▘ ▝▝
+
+   HELLO, I AM YOUR CLAUDECLAW!
+```
+
+Then tell the user the daemon is running and show the PID. Mention they can use `/heartbeat:status` to check on it and `/heartbeat:stop` to stop it.

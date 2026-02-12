@@ -208,6 +208,37 @@ async function teardownStatusline() {
   }
 }
 
+// --- Stop command ---
+
+async function stopDaemon() {
+  let pid: string;
+  try {
+    pid = (await Bun.file(PID_FILE).text()).trim();
+  } catch {
+    console.log("No daemon is running (PID file not found).");
+    process.exit(0);
+  }
+
+  try {
+    process.kill(Number(pid), "SIGTERM");
+    console.log(`Stopped daemon (PID ${pid}).`);
+  } catch {
+    console.log(`Daemon process ${pid} already dead.`);
+  }
+
+  await cleanupPidFile();
+  await teardownStatusline();
+
+  // Clean up state file
+  try {
+    await unlink(join(HEARTBEAT_DIR, "state.json"));
+  } catch {
+    // already gone
+  }
+
+  process.exit(0);
+}
+
 // --- Main ---
 
 interface Settings {
@@ -285,4 +316,8 @@ async function main() {
   }, 60_000);
 }
 
-main();
+if (process.argv.includes("--stop")) {
+  stopDaemon();
+} else {
+  main();
+}
