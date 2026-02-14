@@ -31,7 +31,11 @@ export async function buildState(snapshot: WebSnapshot) {
       nextAt: snapshot.heartbeatNextAt || null,
       nextInMs: snapshot.heartbeatNextAt ? Math.max(0, snapshot.heartbeatNextAt - now) : null,
     },
-    jobs: snapshot.jobs.map((j) => ({ name: j.name, schedule: j.schedule })),
+    jobs: snapshot.jobs.map((j) => ({
+      name: j.name,
+      schedule: j.schedule,
+      prompt: j.prompt,
+    })),
     security: snapshot.settings.security,
     telegram: {
       configured: Boolean(snapshot.settings.telegram.token),

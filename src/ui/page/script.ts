@@ -35,6 +35,8 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
     let use12Hour = localStorage.getItem("clock.format") === "12";
     let quickView = "jobs";
     let quickViewInitialized = false;
+    let expandedJobName = "";
+    let lastRenderedJobs = [];
     let scrollAnimFrame = 0;
 
     const dateFmt = new Intl.DateTimeFormat(undefined, {
@@ -189,13 +191,6 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
       return next;
     }
 
-    function jobPrefix(name) {
-      const raw = String(name || "").trim();
-      if (!raw) return "job";
-      const cut = raw.indexOf("-");
-      return (cut > 0 ? raw.slice(0, cut) : raw).toUpperCase();
-    }
-
     function clockFromSchedule(schedule) {
       const parts = String(schedule || "").trim().split(/\s+/);
       if (parts.length < 2) return schedule;
@@ -247,23 +242,94 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
           const nextAt = j._nextAt;
           const cooldown = nextAt ? fmtDur(nextAt.getTime() - now.getTime()) : "n/a";
           const time = clockFromSchedule(j.schedule || "");
+          const expanded = expandedJobName && expandedJobName === (j.name || "");
+          const nextRunText = nextAt
+            ? new Intl.DateTimeFormat(undefined, {
+                weekday: "short",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: use12Hour,
+              }).format(nextAt)
+            : "--";
           return (
           '<div class="quick-job-item">' +
             '<div class="quick-job-item-main">' +
-              '<div class="quick-job-item-head">' +
-                '<div class="quick-job-item-prefix">' + esc(jobPrefix(j.name)) + "</div>" +
-                '<div class="quick-job-item-time">' + esc(time || "--") + "</div>" +
-              "</div>" +
-              '<div class="quick-job-item-name">' + esc(j.name || "job") + "</div>" +
-              '<div class="quick-job-item-cooldown">Cooldown: ' + esc(cooldown) + "</div>" +
+              '<button class="quick-job-line" type="button" data-toggle-job="' + escAttr(j.name || "") + '">' +
+                '<span class="quick-job-item-name">' + esc(j.name || "job") + "</span>" +
+                '<span class="quick-job-item-time">' + esc(time || "--") + "</span>" +
+                '<span class="quick-job-item-cooldown">' + esc(cooldown) + "</span>" +
+              "</button>" +
+              (expanded ? (
+                '<div class="quick-job-item-details">' +
+                  '<div>Schedule: ' + esc(j.schedule || "--") + "</div>" +
+                  '<div>Next run: ' + esc(nextRunText) + "</div>" +
+                  '<div>Prompt:</div>' +
+                  '<pre class="quick-job-prompt-full">' + esc(String(j.prompt || "")) + "</pre>" +
+                "</div>"
+              ) : (
+                ""
+              )) +
             "</div>" +
-            '<button class="quick-job-delete" type="button" data-delete-job="' + esc(j.name || "") + '">Delete</button>' +
+            '<button class="quick-job-delete" type="button" data-delete-job="' + escAttr(j.name || "") + '">Delete</button>' +
           "</div>"
           );
         })
         .join("");
     }
 
+    function rerenderJobsList() {
+      renderJobsList(lastRenderedJobs);
+    }
+
+    function toggleJobDetails(name) {
+      const jobName = String(name || "");
+      expandedJobName = expandedJobName === jobName ? "" : jobName;
+      rerenderJobsList();
+    }
+
+    async function refreshState() {
+      try {
+        const res = await fetch("/api/state");
+        const state = await res.json();
+        const pills = buildPills(state);
+        dockEl.innerHTML = pills.map((p) =>
+          '<div class="pill ' + p.cls + '">' +
+            '<div class="pill-label"><span class="pill-icon">' + esc(p.icon || "") + "</span>" + esc(p.label) + '</div>' +
+            '<div class="pill-value">' + esc(p.value) + '</div>' +
+          "</div>"
+        ).join("");
+        if (jobsBubbleEl) {
+          jobsBubbleEl.innerHTML =
+            '<div class="side-icon">🗂️</div>' +
+            '<div class="side-value">' + esc(String(state.jobs?.length ?? 0)) + "</div>" +
+            '<div class="side-label">Jobs</div>';
+        }
+        lastRenderedJobs = Array.isArray(state.jobs) ? state.jobs : [];
+        if (expandedJobName && !lastRenderedJobs.some((job) => String(job.name || "") === expandedJobName)) {
+          expandedJobName = "";
+        }
+        renderJobsList(lastRenderedJobs);
+        syncQuickViewForJobs(state.jobs);
+        if (uptimeBubbleEl) {
+          uptimeBubbleEl.innerHTML =
+            '<div class="side-icon">⏱️</div>' +
+            '<div class="side-value">' + esc(fmtDur(state.daemon?.uptimeMs ?? 0)) + "</div>" +
+            '<div class="side-label">Uptime</div>';
+        }
+      } catch (err) {
+        dockEl.innerHTML = '<div class="pill bad"><div class="pill-label"><span class="pill-icon">⚠️</span>Status</div><div class="pill-value">Offline</div></div>';
+        if (jobsBubbleEl) {
+          jobsBubbleEl.innerHTML = '<div class="side-icon">🗂️</div><div class="side-value">-</div><div class="side-label">Jobs</div>';
+        }
+        lastRenderedJobs = [];
+        expandedJobName = "";
+        renderJobsList([]);
+        syncQuickViewForJobs([]);
+        if (uptimeBubbleEl) {
+          uptimeBubbleEl.innerHTML = '<div class="side-icon">⏱️</div><div class="side-value">-</div><div class="side-label">Uptime</div>';
+        }
+      }
+    }
     function smoothScrollTo(top) {
       if (scrollAnimFrame) cancelAnimationFrame(scrollAnimFrame);
       const start = window.scrollY;
@@ -313,44 +379,6 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
       if (!quickViewInitialized) {
         setQuickView("jobs");
         quickViewInitialized = true;
-      }
-    }
-
-    async function refreshState() {
-      try {
-        const res = await fetch("/api/state");
-        const state = await res.json();
-        const pills = buildPills(state);
-        dockEl.innerHTML = pills.map((p) =>
-          '<div class="pill ' + p.cls + '">' +
-            '<div class="pill-label"><span class="pill-icon">' + esc(p.icon || "") + "</span>" + esc(p.label) + '</div>' +
-            '<div class="pill-value">' + esc(p.value) + '</div>' +
-          "</div>"
-        ).join("");
-        if (jobsBubbleEl) {
-          jobsBubbleEl.innerHTML =
-            '<div class="side-icon">🗂️</div>' +
-            '<div class="side-value">' + esc(String(state.jobs?.length ?? 0)) + "</div>" +
-            '<div class="side-label">Jobs</div>';
-        }
-        renderJobsList(state.jobs);
-        syncQuickViewForJobs(state.jobs);
-        if (uptimeBubbleEl) {
-          uptimeBubbleEl.innerHTML =
-            '<div class="side-icon">⏱️</div>' +
-            '<div class="side-value">' + esc(fmtDur(state.daemon?.uptimeMs ?? 0)) + "</div>" +
-            '<div class="side-label">Uptime</div>';
-        }
-      } catch (err) {
-        dockEl.innerHTML = '<div class="pill bad"><div class="pill-label"><span class="pill-icon">⚠️</span>Status</div><div class="pill-value">Offline</div></div>';
-        if (jobsBubbleEl) {
-          jobsBubbleEl.innerHTML = '<div class="side-icon">🗂️</div><div class="side-value">-</div><div class="side-label">Jobs</div>';
-        }
-        renderJobsList([]);
-        syncQuickViewForJobs([]);
-        if (uptimeBubbleEl) {
-          uptimeBubbleEl.innerHTML = '<div class="side-icon">⏱️</div><div class="side-value">-</div><div class="side-label">Uptime</div>';
-        }
       }
     }
 
@@ -578,6 +606,16 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
       updateQuickJobUi();
     });
 
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const row = target.closest("[data-toggle-job]");
+      if (!row || !(row instanceof HTMLElement)) return;
+      const name = row.getAttribute("data-toggle-job") || "";
+      if (!name) return;
+      toggleJobDetails(name);
+    });
+
     document.addEventListener("click", async (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
@@ -644,6 +682,10 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
 
     function esc(s) {
       return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function escAttr(s) {
+      return esc(String(s)).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
 
     renderClock();

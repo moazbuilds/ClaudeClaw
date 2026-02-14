@@ -372,18 +372,20 @@ export const pageStyles = String.raw`    :root {
       display: grid;
       gap: 4px;
     }
-    .quick-job-item-head {
+    .quick-job-line {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
       min-width: 0;
-    }
-    .quick-job-item-prefix {
-      color: #a9dcff;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      white-space: nowrap;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      color: inherit;
+      cursor: pointer;
     }
     .quick-job-item-time {
       color: #bde8ff;
@@ -398,6 +400,27 @@ export const pageStyles = String.raw`    :root {
     }
     .quick-job-item-cooldown {
       color: #a8f1ca;
+      white-space: nowrap;
+    }
+    .quick-job-item-details {
+      border-top: 1px solid #ffffff17;
+      margin-top: 2px;
+      padding-top: 8px;
+      display: grid;
+      gap: 6px;
+      color: #c7d8ee;
+    }
+    .quick-job-prompt-full {
+      margin: 0;
+      padding: 8px;
+      border-radius: 8px;
+      background: #070f1a;
+      border: 1px solid #ffffff14;
+      color: #e4eefb;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 180px;
+      overflow: auto;
     }
     .quick-job-delete {
       align-self: center;
