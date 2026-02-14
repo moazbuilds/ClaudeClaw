@@ -56,6 +56,7 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 - Don't run destructive commands without asking.
 - `trash` > `rm` (recoverable beats gone forever)
 - When in doubt, ask.
+- For this workspace workflow: commit every small change immediately.
 
 ## External vs Internal
 
