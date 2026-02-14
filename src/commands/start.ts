@@ -292,6 +292,13 @@ export async function start(args: string[] = []) {
             settings: currentSettings,
             jobs: currentJobs,
           }),
+          onHeartbeatEnabledChanged: (enabled) => {
+            if (currentSettings.heartbeat.enabled === enabled) return;
+            currentSettings.heartbeat.enabled = enabled;
+            scheduleHeartbeat();
+            updateState();
+            console.log(`[${ts()}] Heartbeat ${enabled ? "enabled" : "disabled"} from Web UI`);
+          },
         });
       } catch (err) {
         lastError = err;

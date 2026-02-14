@@ -26,6 +26,7 @@ export function startWebUi(opts: {
   host: string;
   port: number;
   getSnapshot: () => WebSnapshot;
+  onHeartbeatEnabledChanged?: (enabled: boolean) => void | Promise<void>;
 }): WebServerHandle {
   const server = Bun.serve({
     hostname: opts.host,
@@ -56,6 +57,7 @@ export function startWebUi(opts: {
           const body = await req.json();
           const enabled = Boolean((body as { enabled?: unknown }).enabled);
           await setHeartbeatEnabled(enabled);
+          if (opts.onHeartbeatEnabledChanged) await opts.onHeartbeatEnabledChanged(enabled);
           return json({ ok: true, enabled });
         } catch (err) {
           return json({ ok: false, error: String(err) });
