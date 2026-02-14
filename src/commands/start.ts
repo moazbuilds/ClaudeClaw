@@ -135,6 +135,7 @@ export async function start(args: string[] = []) {
   let telegramFlag = false;
   let debugFlag = false;
   let webFlag = false;
+  let replaceExistingFlag = false;
   let webPortFlag: number | null = null;
   const payloadParts: string[] = [];
 
@@ -150,6 +151,8 @@ export async function start(args: string[] = []) {
       debugFlag = true;
     } else if (arg === "--web") {
       webFlag = true;
+    } else if (arg === "--replace-existing") {
+      replaceExistingFlag = true;
     } else if (arg === "--web-port") {
       const raw = args[i + 1];
       if (!raw) {
@@ -169,7 +172,7 @@ export async function start(args: string[] = []) {
   }
   const payload = payloadParts.join(" ").trim();
   if (hasPromptFlag && !payload) {
-    console.error("Usage: claudeclaw start --prompt <prompt> [--trigger] [--telegram] [--debug] [--web] [--web-port <port>]");
+    console.error("Usage: claudeclaw start --prompt <prompt> [--trigger] [--telegram] [--debug] [--web] [--web-port <port>] [--replace-existing]");
     process.exit(1);
   }
   if (!hasPromptFlag && payload) {
@@ -204,9 +207,30 @@ export async function start(args: string[] = []) {
 
   const existingPid = await checkExistingDaemon();
   if (existingPid) {
-    console.error(`\x1b[31mAborted: daemon already running in this directory (PID ${existingPid})\x1b[0m`);
-    console.error(`Use --stop first, or kill PID ${existingPid} manually.`);
-    process.exit(1);
+    if (!replaceExistingFlag) {
+      console.error(`\x1b[31mAborted: daemon already running in this directory (PID ${existingPid})\x1b[0m`);
+      console.error(`Use --stop first, or kill PID ${existingPid} manually.`);
+      process.exit(1);
+    }
+
+    console.log(`Replacing existing daemon (PID ${existingPid})...`);
+    try {
+      process.kill(existingPid, "SIGTERM");
+    } catch {
+      // ignore if process is already dead
+    }
+
+    const deadline = Date.now() + 4000;
+    while (Date.now() < deadline) {
+      try {
+        process.kill(existingPid, 0);
+        await Bun.sleep(100);
+      } catch {
+        break;
+      }
+    }
+
+    await cleanupPidFile();
   }
 
   await initConfig();
