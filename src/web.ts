@@ -429,6 +429,11 @@ function htmlPage(): string {
       border: 1px solid #ffffff16;
       background: #08101c;
     }
+    .settings-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
     .settings-label {
       display: flex;
       align-items: center;
@@ -518,9 +523,15 @@ function htmlPage(): string {
       <span>Settings</span>
       <button class="settings-close" id="settings-close" type="button" aria-label="Close settings">×</button>
     </div>
-    <div class="settings-row">
-      <div class="settings-label">💓 Heartbeat</div>
-      <button class="hb-toggle" id="hb-toggle" type="button">Loading...</button>
+    <div class="settings-stack">
+      <div class="settings-row">
+        <div class="settings-label">💓 Heartbeat</div>
+        <button class="hb-toggle" id="hb-toggle" type="button">Loading...</button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">🕒 Clock</div>
+        <button class="hb-toggle" id="clock-toggle" type="button">24h</button>
+      </div>
     </div>
   </aside>
   <main class="stage">
@@ -554,6 +565,8 @@ function htmlPage(): string {
     const settingsModal = $("settings-modal");
     const settingsClose = $("settings-close");
     const hbToggle = $("hb-toggle");
+    const clockToggle = $("clock-toggle");
+    let use12Hour = localStorage.getItem("clock.format") === "12";
 
     const dateFmt = new Intl.DateTimeFormat(undefined, {
       weekday: "long",
@@ -615,10 +628,12 @@ function htmlPage(): string {
 
     function renderClock() {
       const now = new Date();
-      const hh = String(now.getHours()).padStart(2, "0");
+      const rawH = now.getHours();
+      const hh = use12Hour ? String((rawH % 12) || 12).padStart(2, "0") : String(rawH).padStart(2, "0");
       const mm = String(now.getMinutes()).padStart(2, "0");
       const ss = String(now.getSeconds()).padStart(2, "0");
-      clockEl.textContent = hh + ":" + mm + ":" + ss;
+      const suffix = use12Hour ? (rawH >= 12 ? " PM" : " AM") : "";
+      clockEl.textContent = hh + ":" + mm + ":" + ss + suffix;
       dateEl.textContent = dateFmt.format(now);
       msgEl.textContent = greetingForHour(now.getHours());
 
@@ -730,6 +745,22 @@ function htmlPage(): string {
           hbToggle.textContent = "Failed";
           hbToggle.className = "hb-toggle off";
         }
+      });
+    }
+
+    function renderClockToggle() {
+      if (!clockToggle) return;
+      clockToggle.textContent = use12Hour ? "12h" : "24h";
+      clockToggle.className = "hb-toggle " + (use12Hour ? "on" : "off");
+    }
+
+    if (clockToggle) {
+      renderClockToggle();
+      clockToggle.addEventListener("click", () => {
+        use12Hour = !use12Hour;
+        localStorage.setItem("clock.format", use12Hour ? "12" : "24");
+        renderClockToggle();
+        renderClock();
       });
     }
 
