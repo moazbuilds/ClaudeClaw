@@ -4,7 +4,14 @@ description: Start daemon mode or run one-shot prompt/trigger
 
 Start the heartbeat daemon for this project. Follow these steps exactly:
 
-1. **Ensure Bun is installed**: Run `which bun`. If it's not found:
+1. **Block home-directory starts (CRITICAL, BLOCKER)**:
+   - Run `pwd` and `echo "$HOME"`.
+   - If `pwd` equals `$HOME`, STOP immediately.
+   - Tell the user exactly:
+     - "CRITICAL BLOCKER: For security reasons, close this session and start a new one from the folder you want to initialize ClaudeClaw in."
+   - Do not continue with any other step until they restart from a non-home project directory.
+
+2. **Ensure Bun is installed**: Run `which bun`. If it's not found:
    - Tell the user Bun is required and will be auto-installed.
    - Run:
      ```bash
@@ -17,26 +24,26 @@ Start the heartbeat daemon for this project. Follow these steps exactly:
    - Verify `bun` is now available with `which bun`. If still not found, tell the user installation failed and to install manually from https://bun.sh, then exit.
    - Tell the user Bun was auto-installed successfully.
 
-2. **Check existing config**: Read `.claude/claudeclaw/settings.json` (if it exists). Determine which sections are already configured:
+3. **Check existing config**: Read `.claude/claudeclaw/settings.json` (if it exists). Determine which sections are already configured:
    - **Heartbeat configured** = `heartbeat.enabled` is `true` AND `heartbeat.prompt` is non-empty
    - **Telegram configured** = `telegram.token` is non-empty
    - **Security configured** = `security.level` exists and is not `"moderate"` (the default), OR `security.allowedTools`/`security.disallowedTools` are non-empty
 
-3. **Interactive setup — smart mode** (BEFORE launching the daemon):
+4. **Interactive setup — smart mode** (BEFORE launching the daemon):
 
    **If ALL three sections are already configured**, show a summary of the current config and ask ONE question:
 
    Use AskUserQuestion:
    - "Your settings are already configured. Want to change anything?" (header: "Settings", options: "Keep current settings", "Reconfigure")
 
-   If they choose "Keep current settings", skip to step 5 (first contact question).
-   If they choose "Reconfigure", proceed to step 4 below as if nothing was configured.
+   If they choose "Keep current settings", skip to step 6 (first contact question).
+   If they choose "Reconfigure", proceed to step 5 below as if nothing was configured.
 
-   **If SOME sections are configured and others are not**, show the already-configured sections as a summary, then only ask about the unconfigured sections in step 4.
+   **If SOME sections are configured and others are not**, show the already-configured sections as a summary, then only ask about the unconfigured sections in step 5.
 
-   **If NOTHING is configured** (fresh install), ask about all three sections in step 4.
+   **If NOTHING is configured** (fresh install), ask about all three sections in step 5.
 
-4. **Ask setup questions**:
+5. **Ask setup questions**:
 
    Use **AskUserQuestion** to ask all unconfigured sections at once (up to 3 questions in one call):
 
@@ -74,7 +81,7 @@ Start the heartbeat daemon for this project. Follow these steps exactly:
 
    Update `.claude/claudeclaw/settings.json` with their answers.
 
-5. **First contact destination**: Use AskUserQuestion to ask where they want first contact to fire. Build options **dynamically** based on whether Telegram was configured in step 4:
+6. **First contact destination**: Use AskUserQuestion to ask where they want first contact to fire. Build options **dynamically** based on whether Telegram was configured in step 5:
 
    - **If Telegram IS configured** (header: "First contact"):
      - "Open in Claude Code (Recommended)" (description: "Meet your agent in Claude Code after launch")
@@ -84,7 +91,7 @@ Start the heartbeat daemon for this project. Follow these steps exactly:
      - "Open in Claude Code (Recommended)" (description: "Meet your agent in Claude Code after launch")
      - "Skip" (description: "Skip for now — daemon keeps running, you can connect later")
 
-6. **Launch/start action**: Run command based on step 5 choice:
+7. **Launch/start action**: Run command based on step 6 choice:
    - **If user chose "Fire to Telegram (Trigger)"**:
      ```bash
      mkdir -p .claude/claudeclaw/logs && nohup bun run ${CLAUDE_PLUGIN_ROOT}/src/index.ts start --web --trigger --telegram > .claude/claudeclaw/logs/daemon.log 2>&1 & echo $!
@@ -101,9 +108,9 @@ Start the heartbeat daemon for this project. Follow these steps exactly:
      - macOS: `open http://<HOST>:<PORT>`
      - If open command fails, print the URL clearly so user can open it manually.
 
-7. **Capture session ID**: Read `.claude/claudeclaw/session.json` and extract the `sessionId` field. This is the shared Claude session used by the daemon for heartbeat, jobs, and Telegram.
+8. **Capture session ID**: Read `.claude/claudeclaw/session.json` and extract the `sessionId` field. This is the shared Claude session used by the daemon for heartbeat, jobs, and Telegram.
 
-8. **Report**: Print the ASCII art below then show the PID, session, status info, one-shot usage tips, and the Web UI URL.
+9. **Report**: Print the ASCII art below then show the PID, session, status info, one-shot usage tips, and the Web UI URL.
 
 CRITICAL: Output the ASCII art block below EXACTLY as-is inside a markdown code block. Do NOT re-indent, re-align, or adjust ANY whitespace. Copy every character verbatim. Only replace `<PID>` and `<WORKING_DIR>` with actual values.
 
@@ -128,7 +135,7 @@ CRITICAL: Output the ASCII art block below EXACTLY as-is inside a markdown code 
 ```bash
 claude --resume <SESSION_ID>
 ```
-Replace `<SESSION_ID>` with the session ID captured in step 7.
+Replace `<SESSION_ID>` with the session ID captured in step 8.
 
 Show this direct Web UI URL:
 ```bash
