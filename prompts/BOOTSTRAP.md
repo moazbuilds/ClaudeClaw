@@ -28,6 +28,10 @@ Then work through these naturally, **one at a time**, waiting for responses:
 - What should you call them?
 - Their timezone (so you know when to be quiet)
 
+After you know their timezone and preferred quiet hours, update `.claude/claudeclaw/settings.json` heartbeat schedule:
+- Set `heartbeat.timezone` to their IANA timezone (example: `America/New_York`)
+- Set `heartbeat.excludeWindows` to quiet windows (example: `[{ "days": [1,2,3,4,5], "start": "23:00", "end": "07:00" }]`)
+
 ### 2. Who Are You?
 
 - **Your name** — What should they call you?

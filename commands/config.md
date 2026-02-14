@@ -128,6 +128,8 @@ Location: `.claude/claudeclaw/settings.json`
 | `heartbeat.enabled`        | boolean    | Whether the recurring heartbeat runs           |
 | `heartbeat.interval`       | number     | Minutes between heartbeat executions           |
 | `heartbeat.prompt`         | string     | Prompt sent to Claude on each heartbeat        |
+| `heartbeat.timezone`       | string     | IANA timezone for quiet hours (e.g. `America/New_York`) |
+| `heartbeat.excludeWindows` | object[]   | Quiet windows where heartbeat is skipped       |
 | `telegram.token`           | string     | Bot token from @BotFather                      |
 | `telegram.allowedUserIds`  | number[]   | Telegram user IDs allowed to interact          |
 

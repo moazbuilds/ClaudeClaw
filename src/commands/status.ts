@@ -85,9 +85,18 @@ async function showStatus(): Promise<boolean> {
   try {
     const settings = await Bun.file(SETTINGS_FILE).json();
     const hb = settings.heartbeat;
+    const timezone =
+      typeof hb?.timezone === "string" && hb.timezone.trim()
+        ? hb.timezone.trim()
+        : Intl.DateTimeFormat().resolvedOptions().timeZone || "system";
+    const windows = Array.isArray(hb?.excludeWindows) ? hb.excludeWindows : [];
     console.log(
       `  Heartbeat: ${hb.enabled ? `every ${hb.interval}m` : "disabled"}`
     );
+    if (hb.enabled) {
+      console.log(`  Heartbeat timezone: ${timezone}`);
+      console.log(`  Quiet windows: ${windows.length > 0 ? windows.length : "none"}`);
+    }
   } catch {}
 
   try {
