@@ -128,7 +128,7 @@ ${pageStyles}
           </div>
           <div class="quick-field">
             <div class="quick-label">Prompt</div>
-            <textarea class="quick-prompt" id="quick-job-prompt" placeholder="Prompt for this scheduled run..." required></textarea>
+            <textarea class="quick-prompt" id="quick-job-prompt" placeholder="Remind me to read 10 pages from my book and drink water." required></textarea>
             <div class="quick-prompt-meta">
               <span id="quick-job-count">0 chars</span>
               <span>Saved at computed clock time</span>
