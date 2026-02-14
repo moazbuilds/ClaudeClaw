@@ -307,7 +307,7 @@ function htmlPage(): string {
 
     html, body {
       width: 100%;
-      height: 100%;
+      min-height: 100%;
       margin: 0;
     }
 
@@ -318,7 +318,8 @@ function htmlPage(): string {
         radial-gradient(1400px 700px at 15% -10%, #4c88d433, transparent 60%),
         radial-gradient(900px 500px at 85% 10%, #78c5ff2b, transparent 65%),
         linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
       position: relative;
     }
 
@@ -338,9 +339,10 @@ function htmlPage(): string {
     }
 
     .stage {
-      min-height: 100%;
+      min-height: 100vh;
       display: grid;
-      place-items: center;
+      justify-items: center;
+      align-items: start;
       padding: 32px 16px 120px;
       position: relative;
       z-index: 1;
@@ -437,32 +439,80 @@ function htmlPage(): string {
       font-weight: 500;
     }
     .quick-job {
-      margin: 18px auto 0;
-      width: min(620px, calc(100vw - 36px));
-      padding: 8px 0 0;
+      margin: 20px auto 0;
+      width: min(720px, calc(100vw - 28px));
+      padding: 14px;
+      border: 1px solid #ffffff22;
+      border-radius: 16px;
+      background:
+        radial-gradient(120% 100% at 100% 0%, #7dc5ff1a, transparent 55%),
+        linear-gradient(180deg, #0e1a2a88 0%, #0a1220a8 100%);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 14px 34px #00000045;
       display: grid;
-      gap: 9px;
+      gap: 12px;
+      text-align: left;
     }
     .quick-job-head {
-      display: flex;
-      justify-content: center;
-      gap: 7px;
+      display: grid;
+      gap: 3px;
+    }
+    .quick-job-title {
+      font-family: "Fraunces", serif;
+      font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+      letter-spacing: 0.01em;
+      color: #f4f8ff;
+      line-height: 1.1;
+    }
+    .quick-job-sub {
       font-family: "JetBrains Mono", monospace;
       font-size: 11px;
+      color: #c9daef;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #d7e4f7;
-      opacity: 0.9;
     }
-    .quick-job-row {
+    .quick-job-grid {
       display: grid;
-      grid-template-columns: 126px minmax(0, 1fr) 118px;
+      grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+      gap: 10px;
+      align-items: stretch;
+    }
+    .quick-field {
+      border: 1px solid #ffffff1c;
+      border-radius: 12px;
+      background: #0c1624a6;
+      padding: 10px;
+      display: grid;
       gap: 8px;
-      align-items: center;
     }
-    .quick-time-wrap {
-      display: grid;
-      gap: 6px;
+    .quick-label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #bfd4ef;
+    }
+    .quick-input,
+    .quick-prompt,
+    .quick-submit {
+      border: 0;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      color: #eef4ff;
+      background: transparent;
+    }
+    .quick-input {
+      height: 42px;
+      width: 100%;
+      padding: 0 11px;
+      border-radius: 10px;
+      border: 1px solid #ffffff2e;
+      background: #ffffff09;
+    }
+    .quick-input:focus-visible,
+    .quick-prompt:focus-visible {
+      outline: 1px solid #7dc5ff88;
+      outline-offset: 1px;
     }
     .quick-time-buttons {
       display: flex;
@@ -470,67 +520,125 @@ function htmlPage(): string {
       flex-wrap: wrap;
     }
     .quick-add {
-      height: 24px;
-      padding: 0 8px;
-      border: 0;
+      height: 27px;
+      padding: 0 10px;
+      border: 1px solid #ffffff2c;
       border-radius: 999px;
       font-family: "JetBrains Mono", monospace;
-      font-size: 10px;
-      letter-spacing: 0.04em;
-      color: #d8e7fb;
-      background: #ffffff14;
+      font-size: 11px;
+      letter-spacing: 0.03em;
+      color: #daebff;
+      background: #ffffff12;
       cursor: pointer;
-      transition: background 0.16s ease, transform 0.16s ease;
+      transition: background 0.16s ease, transform 0.16s ease, border-color 0.16s ease;
     }
     .quick-add:hover {
       background: #ffffff22;
+      border-color: #ffffff44;
       transform: translateY(-1px);
     }
-    .quick-input,
-    .quick-prompt,
-    .quick-submit {
-      border: 0;
-      border-radius: 0;
+    .quick-preview {
+      min-height: 1.2em;
       font-family: "JetBrains Mono", monospace;
-      font-size: 12px;
-      color: #eef4ff;
-      background: transparent;
-    }
-    .quick-input {
-      height: 40px;
-      padding: 0 6px;
-      border-bottom: 1px solid #ffffff2e;
+      font-size: 11px;
+      color: #a8f1ca;
     }
     .quick-prompt {
-      height: 40px;
-      padding: 10px 6px;
-      resize: none;
-      border-bottom: 1px solid #ffffff2e;
+      width: 100%;
+      min-height: 106px;
+      padding: 10px 11px;
+      resize: vertical;
+      border: 1px solid #ffffff2e;
+      border-radius: 10px;
+      background: #ffffff09;
+      line-height: 1.4;
+    }
+    .quick-prompt-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: #c3d6ef;
+    }
+    .quick-job-actions {
+      display: grid;
+      grid-template-columns: 170px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
     }
     .quick-submit {
-      height: 40px;
+      height: 42px;
+      width: 100%;
       cursor: pointer;
-      background: #1f5f40a8;
-      color: #b5f7d3;
       border-radius: 999px;
-      transition: transform 0.16s ease, background 0.16s ease, opacity 0.16s ease, border-color 0.16s ease;
+      border: 1px solid #3cb87980;
+      background: linear-gradient(180deg, #1f6f47d4 0%, #18563ace 100%);
+      color: #c8f8de;
+      font-weight: 600;
+      transition: transform 0.16s ease, filter 0.16s ease, opacity 0.16s ease;
     }
     .quick-submit:hover {
       transform: translateY(-1px);
-      background: #237349c7;
+      filter: brightness(1.06);
     }
     .quick-submit:disabled {
-      opacity: 0.7;
+      opacity: 0.72;
       cursor: wait;
       transform: none;
+      filter: none;
     }
     .quick-status {
       min-height: 1.2em;
-      text-align: center;
       font-family: "JetBrains Mono", monospace;
       font-size: 11px;
       color: #cde0f7;
-      opacity: 0.9;
+      opacity: 0.95;
+    }
+    .quick-jobs {
+      border-top: 1px solid #ffffff1a;
+      padding-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .quick-jobs-list {
+      display: grid;
+      gap: 6px;
+      max-height: 170px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .quick-job-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid #ffffff1d;
+      border-radius: 10px;
+      background: #0b1422a8;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+    }
+    .quick-job-item-time {
+      color: #bde8ff;
+      white-space: nowrap;
+    }
+    .quick-job-item-name {
+      color: #d8e4f7;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: right;
+    }
+    .quick-jobs-empty {
+      padding: 8px 10px;
+      border: 1px dashed #ffffff22;
+      border-radius: 10px;
+      color: #b8cae3;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
     }
     .settings-btn {
       position: fixed;
@@ -934,9 +1042,10 @@ function htmlPage(): string {
       }
       .quick-job {
         margin-top: 14px;
-        padding: 10px;
+        padding: 11px;
       }
-      .quick-job-row {
+      .quick-job-grid,
+      .quick-job-actions {
         grid-template-columns: 1fr;
       }
       .dock-shell {
@@ -1044,20 +1153,41 @@ function htmlPage(): string {
       <div class="date" id="date">Loading date...</div>
       <div class="message" id="message">Welcome back.</div>
       <form class="quick-job" id="quick-job-form">
-        <div class="quick-job-head"><span>Quick Job</span><span>Daily Cron</span></div>
-        <div class="quick-job-row">
-          <div class="quick-time-wrap">
-            <input class="quick-input" id="quick-job-time" type="text" placeholder="HH:MM" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" required />
+        <div class="quick-job-head">
+          <div class="quick-job-title">Add Scheduled Job</div>
+          <div class="quick-job-sub">Daily cron with prompt payload</div>
+        </div>
+        <div class="quick-job-grid">
+          <div class="quick-field quick-time-wrap">
+            <div class="quick-label">Delay From Now (Minutes)</div>
+            <input class="quick-input" id="quick-job-offset" type="number" min="1" max="1440" step="5" placeholder="60" required />
             <div class="quick-time-buttons">
               <button class="quick-add" type="button" data-add-minutes="15">+15m</button>
               <button class="quick-add" type="button" data-add-minutes="30">+30m</button>
-              <button class="quick-add" type="button" data-add-minutes="60">+60m</button>
+              <button class="quick-add" type="button" data-add-minutes="60">+1h</button>
+              <button class="quick-add" type="button" data-add-minutes="180">+3h</button>
+            </div>
+            <div class="quick-preview" id="quick-job-preview">Runs in -- min</div>
+          </div>
+          <div class="quick-field">
+            <div class="quick-label">Prompt</div>
+            <textarea class="quick-prompt" id="quick-job-prompt" placeholder="Prompt for this scheduled run..." required></textarea>
+            <div class="quick-prompt-meta">
+              <span id="quick-job-count">0 chars</span>
+              <span>Saved at computed clock time</span>
             </div>
           </div>
-          <textarea class="quick-prompt" id="quick-job-prompt" placeholder="Prompt for this scheduled run..." required></textarea>
-          <button class="quick-submit" id="quick-job-submit" type="submit">Add Job</button>
         </div>
-        <div class="quick-status" id="quick-job-status"></div>
+        <div class="quick-job-actions">
+          <button class="quick-submit" id="quick-job-submit" type="submit">Add to Jobs List</button>
+          <div class="quick-status" id="quick-job-status"></div>
+        </div>
+        <div class="quick-jobs">
+          <div class="quick-label">Jobs List</div>
+          <div class="quick-jobs-list" id="quick-jobs-list">
+            <div class="quick-jobs-empty">No jobs yet.</div>
+          </div>
+        </div>
       </form>
     </section>
   </main>
@@ -1098,10 +1228,13 @@ function htmlPage(): string {
     const hbInfoEl = $("hb-info");
     const clockInfoEl = $("clock-info");
     const quickJobForm = $("quick-job-form");
-    const quickJobTime = $("quick-job-time");
+    const quickJobOffset = $("quick-job-offset");
     const quickJobPrompt = $("quick-job-prompt");
     const quickJobSubmit = $("quick-job-submit");
     const quickJobStatus = $("quick-job-status");
+    const quickJobPreview = $("quick-job-preview");
+    const quickJobCount = $("quick-job-count");
+    const quickJobsList = $("quick-jobs-list");
     const jobsBubbleEl = $("jobs-bubble");
     const uptimeBubbleEl = $("uptime-bubble");
     let hbBusy = false;
@@ -1234,6 +1367,42 @@ function htmlPage(): string {
       return ss + "s";
     }
 
+    function clockFromSchedule(schedule) {
+      const parts = String(schedule || "").trim().split(/\s+/);
+      if (parts.length < 2) return schedule;
+      const minute = Number(parts[0]);
+      const hour = Number(parts[1]);
+      if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        return schedule;
+      }
+      const dt = new Date();
+      dt.setHours(hour, minute, 0, 0);
+      return new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: use12Hour,
+      }).format(dt);
+    }
+
+    function renderJobsList(jobs) {
+      if (!quickJobsList) return;
+      const items = Array.isArray(jobs) ? jobs.slice() : [];
+      if (!items.length) {
+        quickJobsList.innerHTML = '<div class="quick-jobs-empty">No jobs yet.</div>';
+        return;
+      }
+      quickJobsList.innerHTML = items
+        .slice(-8)
+        .reverse()
+        .map((j) =>
+          '<div class="quick-job-item">' +
+            '<div class="quick-job-item-time">' + esc(clockFromSchedule(j.schedule || "")) + "</div>" +
+            '<div class="quick-job-item-name">' + esc(j.name || "job") + "</div>" +
+          "</div>"
+        )
+        .join("");
+    }
+
     async function refreshState() {
       try {
         const res = await fetch("/api/state");
@@ -1251,6 +1420,7 @@ function htmlPage(): string {
             '<div class="side-value">' + esc(String(state.jobs?.length ?? 0)) + "</div>" +
             '<div class="side-label">Jobs</div>';
         }
+        renderJobsList(state.jobs);
         if (uptimeBubbleEl) {
           uptimeBubbleEl.innerHTML =
             '<div class="side-icon">⏱️</div>' +
@@ -1262,6 +1432,7 @@ function htmlPage(): string {
         if (jobsBubbleEl) {
           jobsBubbleEl.innerHTML = '<div class="side-icon">🗂️</div><div class="side-value">-</div><div class="side-label">Jobs</div>';
         }
+        renderJobsList([]);
         if (uptimeBubbleEl) {
           uptimeBubbleEl.innerHTML = '<div class="side-icon">⏱️</div><div class="side-value">-</div><div class="side-label">Uptime</div>';
         }
@@ -1416,68 +1587,105 @@ function htmlPage(): string {
         localStorage.setItem("clock.format", use12Hour ? "12" : "24");
         renderClockToggle();
         renderClock();
+        updateQuickJobUi();
       });
     }
 
-    if (quickJobTime && !quickJobTime.value) {
-      quickJobTime.value = "09:00";
+    if (quickJobOffset && !quickJobOffset.value) {
+      quickJobOffset.value = "60";
     }
 
-    function normalizeTimeString(value) {
-      const raw = String(value || "").trim();
-      if (!/^\d{1,2}:\d{2}$/.test(raw)) return null;
-      const [hRaw, mRaw] = raw.split(":");
-      const h = Number(hRaw);
-      const m = Number(mRaw);
-      if (!Number.isInteger(h) || !Number.isInteger(m) || h < 0 || h > 23 || m < 0 || m > 59) return null;
-      return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+    function normalizeOffsetMinutes(value) {
+      const n = Number(String(value || "").trim());
+      if (!Number.isFinite(n)) return null;
+      const rounded = Math.round(n);
+      if (rounded < 1 || rounded > 1440) return null;
+      return rounded;
     }
 
-    function addMinutesToTime(time, deltaMinutes) {
-      const normalized = normalizeTimeString(time);
-      if (!normalized) return null;
-      const h = Number(normalized.slice(0, 2));
-      const m = Number(normalized.slice(3, 5));
-      const total = ((h * 60 + m + deltaMinutes) % 1440 + 1440) % 1440;
-      const nextH = Math.floor(total / 60);
-      const nextM = total % 60;
-      return String(nextH).padStart(2, "0") + ":" + String(nextM).padStart(2, "0");
+    function computeTimeFromOffset(offsetMinutes) {
+      const dt = new Date(Date.now() + offsetMinutes * 60_000);
+      const hour = dt.getHours();
+      const minute = dt.getMinutes();
+      const time = String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
+      const dayLabel = dt.toDateString() === new Date().toDateString() ? "Today" : "Tomorrow";
+      const human = new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: use12Hour,
+      }).format(dt);
+      return { hour, minute, time, dayLabel, human };
     }
+
+    function formatPreviewTime(hour, minute) {
+      const dt = new Date();
+      dt.setHours(hour, minute, 0, 0);
+      return new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: use12Hour,
+      }).format(dt);
+    }
+
+    function updateQuickJobUi() {
+      if (quickJobPrompt && quickJobCount) {
+        const count = (quickJobPrompt.value || "").trim().length;
+        quickJobCount.textContent = String(count) + " chars";
+      }
+      if (quickJobOffset && quickJobPreview) {
+        const offset = normalizeOffsetMinutes(quickJobOffset.value || "");
+        if (!offset) {
+          quickJobPreview.textContent = "Use 1-1440 minutes";
+          quickJobPreview.style.color = "#ffd39f";
+          return;
+        }
+        const target = computeTimeFromOffset(offset);
+        const human = formatPreviewTime(target.hour, target.minute) || target.time;
+        quickJobPreview.textContent = target.dayLabel + " " + human;
+        quickJobPreview.style.color = "#a8f1ca";
+      }
+    }
+
+    if (quickJobOffset) quickJobOffset.addEventListener("input", updateQuickJobUi);
+    if (quickJobPrompt) quickJobPrompt.addEventListener("input", updateQuickJobUi);
 
     document.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
       const add = target.closest("[data-add-minutes]");
       if (!add || !(add instanceof HTMLElement)) return;
-      if (!quickJobTime) return;
+      if (!quickJobOffset) return;
       const delta = Number(add.getAttribute("data-add-minutes") || "");
       if (!Number.isFinite(delta)) return;
-      const current = normalizeTimeString(quickJobTime.value) || "09:00";
-      const next = addMinutesToTime(current, delta);
-      if (next) quickJobTime.value = next;
+      const current = normalizeOffsetMinutes(quickJobOffset.value) || 60;
+      const next = Math.min(1440, current + Math.round(delta));
+      quickJobOffset.value = String(next);
+      updateQuickJobUi();
     });
 
-    if (quickJobForm && quickJobTime && quickJobPrompt && quickJobSubmit && quickJobStatus) {
+    if (quickJobForm && quickJobOffset && quickJobPrompt && quickJobSubmit && quickJobStatus) {
       quickJobForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const time = normalizeTimeString(quickJobTime.value || "");
+        const offset = normalizeOffsetMinutes(quickJobOffset.value || "");
         const prompt = (quickJobPrompt.value || "").trim();
-        if (!time || !prompt) {
-          quickJobStatus.textContent = "Use HH:MM and add a prompt.";
+        if (!offset || !prompt) {
+          quickJobStatus.textContent = "Use 1-1440 minutes and add a prompt.";
           return;
         }
+        const target = computeTimeFromOffset(offset);
         quickJobSubmit.disabled = true;
         quickJobStatus.textContent = "Saving job...";
         try {
           const res = await fetch("/api/jobs/quick", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ time, prompt }),
+            body: JSON.stringify({ time: target.time, prompt }),
           });
           const out = await res.json();
           if (!out.ok) throw new Error(out.error || "failed");
-          quickJobStatus.textContent = "Saved: " + out.schedule + " (" + out.name + ")";
+          quickJobStatus.textContent = "Added to jobs list.";
           quickJobPrompt.value = "";
+          updateQuickJobUi();
           await refreshState();
         } catch (err) {
           quickJobStatus.textContent = "Failed: " + String(err instanceof Error ? err.message : err);
@@ -1494,6 +1702,7 @@ function htmlPage(): string {
     renderClock();
     setInterval(renderClock, 1000);
     startTypewriter();
+    updateQuickJobUi();
 
     refreshState();
     setInterval(refreshState, 1000);
