@@ -31,6 +31,8 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
     const uptimeBubbleEl = $("uptime-bubble");
     let hbBusy = false;
     let use12Hour = localStorage.getItem("clock.format") === "12";
+    let quickView = "jobs";
+    let quickViewInitialized = false;
 
     const dateFmt = new Intl.DateTimeFormat(undefined, {
       weekday: "long",
@@ -195,16 +197,33 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
         .join("");
     }
 
-    function setQuickView(view) {
+    function focusQuickView(view) {
+      const target = view === "jobs" ? quickJobsView : quickJobForm;
+      if (!target) return;
+      const y = Math.max(0, window.scrollY + target.getBoundingClientRect().top - 44);
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+
+    function setQuickView(view, options) {
       if (!quickJobsView || !quickJobForm) return;
       const showJobs = view === "jobs";
       quickJobsView.classList.toggle("quick-view-hidden", !showJobs);
       quickJobForm.classList.toggle("quick-view-hidden", showJobs);
+      quickView = showJobs ? "jobs" : "create";
+      if (options && options.scroll) focusQuickView(quickView);
     }
 
     function syncQuickViewForJobs(jobs) {
       const count = Array.isArray(jobs) ? jobs.length : 0;
-      setQuickView(count > 0 ? "jobs" : "create");
+      if (count === 0) {
+        setQuickView("create");
+        quickViewInitialized = true;
+        return;
+      }
+      if (!quickViewInitialized) {
+        setQuickView("jobs");
+        quickViewInitialized = true;
+      }
     }
 
     async function refreshState() {
@@ -470,13 +489,11 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
     });
 
     if (quickOpenCreate) {
-      quickOpenCreate.addEventListener("click", () => setQuickView("create"));
+      quickOpenCreate.addEventListener("click", () => setQuickView("create", { scroll: true }));
     }
 
     if (quickBackJobs) {
-      quickBackJobs.addEventListener("click", async () => {
-        await refreshState();
-      });
+      quickBackJobs.addEventListener("click", () => setQuickView("jobs", { scroll: true }));
     }
 
     if (quickJobForm && quickJobOffset && quickJobPrompt && quickJobSubmit && quickJobStatus) {
@@ -502,6 +519,7 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
           quickJobStatus.textContent = "Added to jobs list.";
           quickJobPrompt.value = "";
           updateQuickJobUi();
+          setQuickView("jobs", { scroll: true });
           await refreshState();
         } catch (err) {
           quickJobStatus.textContent = "Failed: " + String(err instanceof Error ? err.message : err);
@@ -519,7 +537,7 @@ export const pageScript = String.raw`    const $ = (id) => document.getElementBy
     setInterval(renderClock, 1000);
     startTypewriter();
     updateQuickJobUi();
-    setQuickView("jobs");
+    setQuickView(quickView);
 
     refreshState();
     setInterval(refreshState, 1000);`;
