@@ -640,22 +640,22 @@ function htmlPage(): string {
       left: 50%;
       bottom: 24px;
       transform: translateX(-50%);
-      width: min(940px, calc(100% - 24px));
+      width: min(980px, calc(100% - 24px));
       border: 1px solid #e6efff2b;
       background: linear-gradient(180deg, #0d1728d9, #0a1320d9);
       backdrop-filter: blur(8px);
       border-radius: 20px;
-      padding: 10px;
+      padding: 10px 12px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 8px;
       z-index: 2;
       box-shadow: 0 16px 42px #00000059, inset 0 1px 0 #ffffff17;
     }
 
     .pill {
-      min-height: 44px;
-      padding: 9px 10px;
+      min-height: 56px;
+      padding: 9px 11px;
       border-radius: 13px;
       border: 1px solid #ffffff1d;
       background: linear-gradient(180deg, #101b2d, #0d1625);
@@ -663,16 +663,34 @@ function htmlPage(): string {
       font-size: 12px;
       letter-spacing: 0.01em;
       font-family: "JetBrains Mono", monospace;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
+      display: grid;
+      align-content: center;
+      gap: 2px;
       box-shadow: inset 0 1px 0 #ffffff10;
     }
+    .pill-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #9fb4d4;
+    }
+    .pill-value {
+      font-size: 13px;
+      color: #eaf2ff;
+      font-weight: 600;
+    }
+    .pill-meta {
+      font-size: 10px;
+      color: #9fb4d4;
+      line-height: 1.2;
+    }
 
-    .pill.ok { border-color: #67f0b542; color: #8bf7c6; }
-    .pill.warn { border-color: #ffc27652; color: #ffd298; }
-    .pill.bad { border-color: #ff7f7f47; color: #ffacac; }
+    .pill.ok { border-color: #67f0b542; }
+    .pill.ok .pill-value { color: #8bf7c6; }
+    .pill.warn { border-color: #ffc27652; }
+    .pill.warn .pill-value { color: #ffd298; }
+    .pill.bad { border-color: #ff7f7f47; }
+    .pill.bad .pill-value { color: #ffacac; }
 
     @media (max-width: 640px) {
       .stage {
@@ -856,28 +874,44 @@ function htmlPage(): string {
       const pills = [];
 
       if (state.heartbeat.enabled) {
-        pills.push({ cls: "ok", text: "heartbeat every " + state.heartbeat.intervalMinutes + "m" });
+        pills.push({
+          cls: "ok",
+          label: "Heartbeat",
+          value: "Every " + state.heartbeat.intervalMinutes + "m",
+        });
       } else {
-        pills.push({ cls: "bad", text: "heartbeat disabled" });
+        pills.push({
+          cls: "bad",
+          label: "Heartbeat",
+          value: "Disabled",
+        });
       }
 
       pills.push({
         cls: state.security.level === "unrestricted" ? "warn" : "ok",
-        text: "security " + state.security.level,
+        label: "Security",
+        value: cap(state.security.level),
+        meta: "allowed " + (state.security.allowedTools?.length || 0) + " | blocked " + (state.security.disallowedTools?.length || 0),
       });
 
       pills.push({
         cls: state.telegram.configured ? "ok" : "warn",
-        text: state.telegram.configured
-          ? "telegram " + state.telegram.allowedUserCount + " user" + (state.telegram.allowedUserCount !== 1 ? "s" : "")
-          : "telegram not configured",
+        label: "Telegram",
+        value: state.telegram.configured
+          ? (state.telegram.allowedUserCount + " user" + (state.telegram.allowedUserCount !== 1 ? "s" : ""))
+          : "Not configured",
       });
 
       pills.push({
         cls: state.jobs.length ? "ok" : "warn",
-        text: "jobs " + state.jobs.length,
+        label: "Jobs",
+        value: String(state.jobs.length),
       });
-      pills.push({ cls: "ok", text: "uptime " + fmtDur(state.daemon.uptimeMs) });
+      pills.push({
+        cls: "ok",
+        label: "Uptime",
+        value: fmtDur(state.daemon.uptimeMs),
+      });
 
       return pills;
     }
@@ -898,10 +932,21 @@ function htmlPage(): string {
         const res = await fetch("/api/state");
         const state = await res.json();
         const pills = buildPills(state);
-        dockEl.innerHTML = pills.map((p) => '<div class="pill ' + p.cls + '">' + esc(p.text) + '</div>').join("");
+        dockEl.innerHTML = pills.map((p) =>
+          '<div class="pill ' + p.cls + '">' +
+            '<div class="pill-label">' + esc(p.label) + '</div>' +
+            '<div class="pill-value">' + esc(p.value) + '</div>' +
+            (p.meta ? ('<div class="pill-meta">' + esc(p.meta) + "</div>") : "") +
+          "</div>"
+        ).join("");
       } catch (err) {
-        dockEl.innerHTML = '<div class="pill bad">offline: ' + esc(String(err)) + '</div>';
+        dockEl.innerHTML = '<div class="pill bad"><div class="pill-label">Status</div><div class="pill-value">Offline</div><div class="pill-meta">' + esc(String(err)) + '</div></div>';
       }
+    }
+
+    function cap(s) {
+      if (!s) return "";
+      return s.slice(0, 1).toUpperCase() + s.slice(1);
     }
 
     async function loadSettings() {
