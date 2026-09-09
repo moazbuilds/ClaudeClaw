@@ -518,6 +518,33 @@ Rules:
   }
 }
 
+// --- AI-generated thread title (uses Haiku via Claude OAuth) ---
+
+async function generateThreadTitle(userText: string, replyText: string): Promise<string | null> {
+  const systemPrompt = `Summarize the following conversation opener into a short Discord thread title.
+Return ONLY the title text, no quotes, no punctuation at the end, max 6 words. No explanation.`;
+
+  try {
+    const { execSync } = await import("node:child_process");
+    const input = `${systemPrompt}\n\n---\nUser: ${userText.slice(0, 500)}\nAssistant: ${replyText.slice(0, 500)}`;
+    const result = execSync(
+      `claude --model claude-haiku-4-5-20251001 --print --output-format text`,
+      {
+        input,
+        encoding: "utf-8",
+        timeout: 15000,
+        env: { ...process.env, HOME: homedir() },
+      },
+    ).trim();
+
+    if (!result) return null;
+    return result.replace(/^["'`]+|["'`]+$/g, "").slice(0, 90);
+  } catch (err) {
+    console.error(`[Discord] Thread title generation error: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
+}
+
 // --- Attachment handling (original) ---
 
 function isImageAttachment(a: DiscordAttachment): boolean {
@@ -753,6 +780,10 @@ async function handleMessageCreate(token: string, message: DiscordMessage, skipC
 
   const userId = message.author.id;
   const channelId = message.channel_id;
+  // Reassigned to the newly created thread's ID when auto-threading kicks in below.
+  // channelId itself stays pointed at the original channel — reactions on the triggering
+  // message must land there, not in the thread.
+  let targetChannelId = channelId;
   const isDM = !message.guild_id;
   const isGuild = !!message.guild_id;
   const content = message.content.replace(/\0/g, "");
@@ -858,11 +889,12 @@ async function handleMessageCreate(token: string, message: DiscordMessage, skipC
   }
 
   // Typing indicator loop (Discord typing lasts 10s, fire every 8s)
-  const typingInterval = setInterval(() => sendTyping(config.token, channelId), 8000);
+  // References targetChannelId by closure so it follows auto-thread creation below.
+  const typingInterval = setInterval(() => sendTyping(config.token, targetChannelId), 8000);
   let streamCb: DiscordStreamCallbacks | undefined;
 
   try {
-    await sendTyping(config.token, channelId);
+    await sendTyping(config.token, targetChannelId);
 
     let imagePath: string | null = null;
     let voicePath: string | null = null;
@@ -974,6 +1006,27 @@ async function handleMessageCreate(token: string, message: DiscordMessage, skipC
       }
     }
 
+    // Auto-thread: channel is configured to spin a fresh thread per top-level message.
+    // Anchoring the thread to message.id makes Discord show the quoted original automatically.
+    // Skipped when we're already inside a thread (threadInfo set) — only top-level channel
+    // messages spawn new threads.
+    if (isGuild && !threadInfo && config.autoThreadChannels.includes(channelId)) {
+      try {
+        const placeholderName = (cleanContent.trim() || "New conversation").slice(0, 90);
+        const thread = await discordApi<{ id: string; name: string }>(
+          config.token,
+          "POST",
+          `/channels/${channelId}/messages/${message.id}/threads`,
+          { name: placeholderName, auto_archive_duration: 1440 },
+        );
+        upsertThread(thread.id, channelId, thread.name);
+        targetChannelId = thread.id;
+        debugLog(`Auto-thread created: ${thread.id} parent=${channelId}`);
+      } catch (err) {
+        console.error(`[Discord] Auto-thread creation failed: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+
     // Skill routing: detect slash commands and resolve to SKILL.md prompts
     const command = cleanContent.startsWith("/") ? cleanContent.trim().split(/\s+/, 1)[0].toLowerCase() : null;
 
@@ -1040,21 +1093,23 @@ async function handleMessageCreate(token: string, message: DiscordMessage, skipC
     }
 
     const prefixedPrompt = promptParts.join("\n");
-    // Guild channels (including threads) each get their own isolated session; DMs use the global session
-    const sessionKey = isGuild ? channelId : undefined;
+    // Guild channels (including threads) each get their own isolated session; DMs use the global session.
+    // targetChannelId is the auto-created thread when auto-threading fired above, so the new
+    // thread gets a session isolated from the parent channel, same as a manually created thread.
+    const sessionKey = isGuild ? targetChannelId : undefined;
     const requestStartedAt = Date.now();
     if (sessionKey) {
       const existing = await peekThreadSession(sessionKey);
       const globalSession = await peekSession();
       if (!existing && globalSession) {
         console.warn(
-          `[Discord] Channel ${channelId} now using isolated session. ` +
+          `[Discord] Channel ${targetChannelId} now using isolated session. ` +
             `Global session history is no longer accessible here.`,
         );
       }
     }
     if (config.streaming) {
-      streamCb = makeDiscordStreamCallback(config.token, channelId);
+      streamCb = makeDiscordStreamCallback(config.token, targetChannelId);
     }
 
     const result = await (async () => {
@@ -1076,25 +1131,38 @@ async function handleMessageCreate(token: string, message: DiscordMessage, skipC
     })();
 
     if (result.exitCode !== 0) {
-      await sendMessage(config.token, channelId, `Error (exit ${result.exitCode}): ${extractErrorDetail(result) || "Unknown error"}`);
+      await sendMessage(config.token, targetChannelId, `Error (exit ${result.exitCode}): ${extractErrorDetail(result) || "Unknown error"}`);
     } else {
       const { cleanedText, reactionEmoji } = extractReactionDirective(result.stdout || "");
       if (reactionEmoji) {
+        // Reaction goes on the original triggering message, which always lives in channelId
+        // (the parent channel), never in the auto-created thread.
         await sendReaction(config.token, channelId, message.id, reactionEmoji).catch((err) => {
           console.error(`[Discord] Failed to send reaction for ${label}: ${err instanceof Error ? err.message : err}`);
         });
       }
       const { paths: imagePaths, cleanedText: finalText } = extractImagePaths(cleanedText || "", config.imageOutputRoots, requestStartedAt);
       if (imagePaths.length > 0) {
-        await sendMessageWithImages(config.token, channelId, finalText || "(empty response)", imagePaths);
+        await sendMessageWithImages(config.token, targetChannelId, finalText || "(empty response)", imagePaths);
       } else {
-        await sendMessage(config.token, channelId, finalText || "(empty response)");
+        await sendMessage(config.token, targetChannelId, finalText || "(empty response)");
+      }
+
+      // Auto-created thread: replace the placeholder title with an AI-generated summary.
+      // Fire-and-forget — must not delay the reply the user is waiting on.
+      if (targetChannelId !== channelId) {
+        generateThreadTitle(cleanContent, finalText || "")
+          .then((title) => {
+            if (!title) return;
+            return discordApi(config.token, "PATCH", `/channels/${targetChannelId}`, { name: title });
+          })
+          .catch((err) => debugLog(`Thread title rename failed: ${err instanceof Error ? err.message : err}`));
       }
     }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error(`[Discord] Error for ${label}: ${errMsg}`);
-    await sendMessage(config.token, channelId, `Error: ${errMsg}`);
+    await sendMessage(config.token, targetChannelId, `Error: ${errMsg}`);
   } finally {
     if (streamCb) {
       await streamCb.finalize();

@@ -79,7 +79,7 @@ const DEFAULT_SETTINGS: Settings = {
     forwardToTelegram: true,
   },
   telegram: { token: "", allowedUserIds: [], listenChats: [], receiveEnabled: true, dmIsolation: "shared" },
-  discord: { token: "", allowedUserIds: [], listenChannels: [], listenGuilds: [], allowedGuilds: [], imageOutputRoots: [], streaming: false },
+  discord: { token: "", allowedUserIds: [], listenChannels: [], listenGuilds: [], allowedGuilds: [], imageOutputRoots: [], streaming: false, autoThreadChannels: [] },
   slack: { botToken: "", appToken: "", allowedUserIds: [], listenChannels: [], allowBots: [], allowBotIds: [] },
   security: { level: "moderate", allowedTools: [], disallowedTools: [] },
   web: { enabled: false, host: "127.0.0.1", port: 4632 },
@@ -133,6 +133,8 @@ export interface DiscordConfig {
   imageOutputRoots: string[]; // Absolute path prefixes from which image uploads are permitted
   streaming?: boolean; // When true, POST a live preview while Claude is working. Default: false.
   channelAllowedUserIds?: Record<string, string[]>; // channelId -> extra user IDs allowed in that guild channel only (never DMs)
+  /** Channel IDs where every top-level message auto-creates a thread (must also be in listenChannels). Default: []. */
+  autoThreadChannels: string[];
 }
 
 export interface SlackConfig {
@@ -359,6 +361,9 @@ function parseSettings(
         : [],
       listenGuilds: Array.isArray(raw.discord?.listenGuilds)
         ? raw.discord.listenGuilds.map(String)
+        : [],
+      autoThreadChannels: Array.isArray(raw.discord?.autoThreadChannels)
+        ? raw.discord.autoThreadChannels.map(String)
         : [],
       allowedGuilds: Array.isArray(raw.discord?.allowedGuilds)
         ? raw.discord.allowedGuilds.map(String)
