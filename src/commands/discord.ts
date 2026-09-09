@@ -498,7 +498,7 @@ Rules:
     const { execSync } = await import("node:child_process");
     const input = `${systemPrompt}\n\n---\nUser message: ${text}`;
     const result = execSync(
-      `claude --model claude-sonnet-4-20250514 --print --output-format text`,
+      `claude --model sonnet --print --output-format text`,
       {
         input,
         encoding: "utf-8",
@@ -528,7 +528,7 @@ Return ONLY the title text, no quotes, no punctuation at the end, max 6 words. N
     const { execSync } = await import("node:child_process");
     const input = `${systemPrompt}\n\n---\nUser: ${userText.slice(0, 500)}\nAssistant: ${replyText.slice(0, 500)}`;
     const result = execSync(
-      `claude --model claude-haiku-4-5-20251001 --print --output-format text`,
+      `claude --model haiku --print --output-format text`,
       {
         input,
         encoding: "utf-8",
